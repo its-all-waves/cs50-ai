@@ -14,7 +14,7 @@
             "args": [
                 "small"
             ],
-            "cwd": "/workspaces/cs50-ai/degrees"
+            "cwd": "/workspaces/cs50-ai/tictactoe"
         }
     ]
 }
