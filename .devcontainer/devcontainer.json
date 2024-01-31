@@ -5,6 +5,11 @@
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"image": "mcr.microsoft.com/devcontainers/base:jammy",
 	"features": {
+		"ghcr.io/devcontainers/features/desktop-lite": {
+			"password": "",
+			"vncPort": 5901,
+			"webPort": 6080
+		},
 		"ghcr.io/devcontainers/features/common-utils:2": {
 			"installZsh": true,
 			"configureZshAsDefaultShell": true,
@@ -22,14 +27,15 @@
 		"ghcr.io/devcontainers-contrib/features/black:2": {
 			"version": "latest"
 		}
-	}
+	},
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
-	,
 	"forwardPorts": [
-		43517
+		43517, // vscode debugger
+		5901, // desktop-lite VNC
+		6080 // desktop-lite webPort
 	],
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": [
@@ -39,6 +45,7 @@
 		"pip install check50",
 		"pip install submit50"
 	],
+	"postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
 	// Configure tool-specific properties.
 	"customizations": {
 		"vscode": {
@@ -46,7 +53,7 @@
 				"ms-python.black-formatter"
 			]
 		}
-	},
+	}
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
 }

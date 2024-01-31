@@ -14,18 +14,16 @@ def initial_state():
     """
     Returns starting state of the board.
     """
-    return [[EMPTY, EMPTY, EMPTY], [EMPTY, EMPTY, EMPTY], [EMPTY, EMPTY, EMPTY]]
+    return [
+        [EMPTY, EMPTY, EMPTY],
+        [EMPTY, EMPTY, EMPTY],
+        [EMPTY, EMPTY, EMPTY],
+    ]
 
 
 def player(board):
     """
     Returns player who has the next turn on a board.
-
-    Counts and returns the player with the least moves currently on the board.
-
-    TODO FIX
-        :( player returns X after four moves
-        expected "X", not "O"
     """
     if terminal(board):
         return None
@@ -48,7 +46,7 @@ def actions(board):
     Returns set of all possible actions (i, j) available on the board.
     """
     if terminal(board):  # DEBUG - UNCOMMENT ME
-        return None
+        return set()
 
     # row is [val, val, val]
     # col is X or O or EMPTY
@@ -63,8 +61,9 @@ def result(board, action):
     Returns the board that results from making move (i, j) on the board.
     """
     i, j = action
+
     if i > 3 or i < 0 or j > 3 or j < 0:
-        raise IndexError("There are no negative coordinates.")
+        raise IndexError("Coordinates of moves must be in range 0-2, inclusive.")
 
     if board[i][j] != EMPTY:
         raise Exception("Invalid action. The cell is already occupied.")
@@ -82,42 +81,34 @@ def winner(board):
     """
     Returns the winner of the game, if there is one.
     """
+
+    all_X = [X, X, X]
+    all_O = [O, O, O]
+
     # check for 3 in a row in a row
-    for row in board:
-        if row == [X, X, X]:
-            return X
-        if row == [O, O, O]:
-            return O
+    row_0 = board[0]
+    row_1 = board[1]
+    row_2 = board[2]
+    if row_0 == all_X or row_1 == all_X or row_2 == all_X:
+        return X
+    if row_0 == all_O or row_1 == all_O or row_2 == all_O:
+        return O
 
     # check for 3 in a row in a col
-    col0_count, col1_count, col2_count = 0, 0, 0
-    for row in board:
-        if row[0] == X:
-            col0_count += 1
-        if row[1] == X:
-            col1_count += 1
-        if row[2] == X:
-            col2_count += 1
-    if col0_count == 3 or col1_count == 3 or col2_count == 3:
+    col_0 = [board[0][0], board[1][0], board[2][0]]
+    col_1 = [board[0][1], board[1][1], board[2][1]]
+    col_2 = [board[0][2], board[1][2], board[2][2]]
+    if col_0 == all_X or col_1 == all_X or col_2 == all_X:
         return X
-
-    col0_count, col1_count, col2_count = 0, 0, 0
-    for row in board:
-        if row[0] == O:
-            col0_count += 1
-        if row[1] == O:
-            col1_count += 1
-        if row[2] == O:
-            col2_count += 1
-    if col0_count == 3 or col1_count == 3 or col2_count == 3:
+    if col_0 == all_O or col_1 == all_O or col_2 == all_O:
         return O
 
     # check for 3 in a row on a diagonal
-    LR_diagonal_count = (board[0][0], board[1][1], board[2][2])
-    RL_diagonal_count = (board[0][2], board[1][1], board[2][0])
-    if LR_diagonal_count == (X, X, X) or RL_diagonal_count == (X, X, X):
+    diag_LR = [board[0][0], board[1][1], board[2][2]]
+    diag_RL = [board[0][2], board[1][1], board[2][0]]
+    if diag_LR == all_X or diag_RL == all_X:
         return X
-    if LR_diagonal_count == (O, O, O) or RL_diagonal_count == (O, O, O):
+    if diag_LR == all_O or diag_RL == all_O:
         return O
 
     return None
@@ -127,11 +118,9 @@ def terminal(board):
     """
     Returns True if game is over, False otherwise.
     """
-    # if there's a winner or no empty cells
-    # TODO ??? the other case(s)
     there_is_a_winner = bool(winner(board))
     all_cells_are_occupied = all(cell != EMPTY for row in board for cell in row)
-    return True if there_is_a_winner or all_cells_are_occupied else False
+    return there_is_a_winner or all_cells_are_occupied
 
 
 def utility(board):
@@ -144,6 +133,63 @@ def utility(board):
 
 def minimax(board):
     """
-    Returns the optimal action for the current player on the board.
+    Returns the optimal action (i, j) for the current player on the board.
     """
-    raise NotImplementedError
+    if not (player_turn := player(board)):
+        return None
+
+    if player_turn == X:
+        X_best_action = None
+        X_best_util = float("-inf")
+
+        for X_action in actions(board):
+            board_after_X_action = result(board, X_action)
+            O_best_util = min_value(board_after_X_action)
+            if O_best_util > X_best_util:
+                X_best_util = O_best_util
+                X_best_action = X_action
+
+        return X_best_action
+
+    if player_turn == O:
+        O_best_action = None
+        O_best_util = float("inf")
+
+        for O_action in actions(board):
+            board_after_O_action = result(board, O_action)
+            X_best_util = max_value(board_after_O_action)
+            if X_best_util < O_best_util:
+                O_best_util = X_best_util
+                O_best_action = O_action
+
+        return O_best_action
+
+
+def max_value(board):
+    """Helper for minimax()"""
+    if terminal(board):
+        return utility(board)
+
+    X_best_util = float("-inf")
+    for X_action in actions(board):
+        board_after_X_action = result(board, X_action)
+        O_best_util = min_value(board_after_X_action)
+        if O_best_util > X_best_util:
+            X_best_util = O_best_util
+
+    return X_best_util
+
+
+def min_value(board):
+    """Helper for minimax()"""
+    if terminal(board):
+        return utility(board)
+
+    O_best_util = float("inf")
+    for O_action in actions(board):
+        board_after_O_action = result(board, O_action)
+        X_best_util = max_value(board_after_O_action)
+        if X_best_util < O_best_util:
+            O_best_util = X_best_util
+
+    return O_best_util
