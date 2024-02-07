@@ -2,12 +2,18 @@ from logic import *
 
 AKnight = Symbol("A is a Knight")
 AKnave = Symbol("A is a Knave")
+A_is_a_knight = AKnight
+A_is_a_knave = AKnave
 
 BKnight = Symbol("B is a Knight")
 BKnave = Symbol("B is a Knave")
+B_is_a_knight = BKnight
+B_is_a_knave = BKnave
 
 CKnight = Symbol("C is a Knight")
 CKnave = Symbol("C is a Knave")
+C_is_a_knight = CKnight
+C_is_a_knave = CKnave
 
 """
 What is given?
@@ -18,36 +24,63 @@ What is given?
 
 # Puzzle 0
 # A says "I am both a knight and a knave."
-A_says_i_am_both = And(AKnight, AKnave)
+A_says = And(A_is_a_knight, A_is_a_knave)
 knowledge0 = And(
-    # TODO
-    Or(AKnight, AKnave),  # char is a knight or a knave // NOT X-OR!, hence...
-    Implication(AKnight, A_says_i_am_both),
-    Implication(AKnave, Not(A_says_i_am_both)),
+    Or(A_is_a_knight, A_is_a_knave),  # char is a knight or a knave
+    Implication(A_is_a_knight, A_says),  # if A is a knight, what they say is true
+    Implication(A_is_a_knave, Not(A_says)),  # if A is a knave, what they say is false
 )
 
 # Puzzle 1
 # A says "We are both knaves."
+A_says = And(A_is_a_knave, B_is_a_knave)
 # B says nothing.
-A_says_we_are_both_knaves = AKnave
 knowledge1 = And(
     # TODO
+    Or(A_is_a_knight, A_is_a_knave),
+    Implication(A_is_a_knight, A_says),
+    Implication(A_is_a_knave, Not(A_says)),
+    Or(B_is_a_knight, B_is_a_knave),
 )
 
 # Puzzle 2
 # A says "We are the same kind."
+A_says = Or(
+    And(A_is_a_knight, B_is_a_knight),
+    And(A_is_a_knave, B_is_a_knave),
+)
 # B says "We are of different kinds."
+B_says = Or(
+    And(A_is_a_knave, B_is_a_knight),
+    And(A_is_a_knight, B_is_a_knave),
+)
 knowledge2 = And(
-    # TODO
+    Or(A_is_a_knight, A_is_a_knave),
+    Implication(A_is_a_knight, A_says),
+    Implication(A_is_a_knave, Not(A_says)),
+    Or(B_is_a_knight, B_is_a_knave),
+    Implication(B_is_a_knight, B_says),
+    Implication(B_is_a_knave, Not(B_says)),
 )
 
 # Puzzle 3
 # A says either "I am a knight." or "I am a knave.", but you don't know which.
-# B says "A said 'I am a knave'."
-# B says "C is a knave."
+A_says = Or(A_is_a_knight, A_is_a_knave)
+# B says "A said 'I am a knave'." AND B says "C is a knave."
+B_says_A_said = A_is_a_knave
+B_says = And(B_says_A_said, C_is_a_knave)
 # C says "A is a knight."
+C_says = A_is_a_knight
 knowledge3 = And(
-    # TODO
+    Or(A_is_a_knight, A_is_a_knave),
+    Implication(A_is_a_knight, A_says),
+    Implication(A_is_a_knave, Not(A_says)),
+    Or(B_is_a_knight, B_is_a_knave),
+    Implication(B_is_a_knight, B_says),
+    Implication(B_is_a_knave, Not(B_says)),
+    Or(C_is_a_knight, C_is_a_knave),
+    Implication(C_is_a_knight, C_says),
+    Implication(C_is_a_knave, Not(C_says)),
 )
 
 
