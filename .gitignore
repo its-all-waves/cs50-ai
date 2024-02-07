@@ -1,8 +1,14 @@
 __NOTES/
 .DS_Store
 
+
+
 *.zip
 *.csv
+
+*.ttf
+*.png
+*.ttf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
