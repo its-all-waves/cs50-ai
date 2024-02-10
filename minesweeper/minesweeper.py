@@ -125,15 +125,19 @@ class Sentence:
         Updates internal knowledge representation given the fact that
         a cell is known to be a mine.
         """
-        self.cells.remove(cell)
-        self.count -= 1
+        if cell in self.cells:
+            self.cells.remove(cell)
+            self.count -= 1
+        # self.cells.add(cell)
+        # self.count += 1
 
     def mark_safe(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be safe.
         """
-        self.cells.remove(cell)
+        if cell in self.cells:
+            self.cells.remove(cell)
 
 
 class MinesweeperAI:
@@ -181,7 +185,7 @@ class MinesweeperAI:
         for sentence in self.knowledge:
             sentence.mark_safe(cell)
 
-    def _set_of_nearby_cells(self, cell):
+    def surrounding_cells(self, cell):
         """
         Returns an array of nearby mines.
         """
@@ -224,62 +228,86 @@ class MinesweeperAI:
         # 1) mark the cell as a move that has been made
         # 2) mark the cell as safe
         self.moves_made.add(cell)
-        self.safes.add(cell)
+        # self.safes.add(cell)
+        self.mark_safe(cell)
 
         # 3) add a new sentence to the AI's knowledge base
         #     based on the value of `cell` and `count`
-        set_of_nearby_cells = self._set_of_nearby_cells(cell)
-
-        # TODO ASSUMPTION: if count is 0, no need to add to knowledge base???
-
-        if count == 0:
-            # all nearby cells are safe; don't add to KB
-            self.safes.union(set_of_nearby_cells)
-        else:
-            # update the KB based on the new sentence (check for subsets...)
-            new_sentence: Sentence = Sentence(set_of_nearby_cells, count)
-
-            if new_sentence not in self.knowledge:
-                self.knowledge.append(new_sentence)
-
-            for sentence in self.knowledge:
-                if new_sentence.cells.issubset(sentence.cells):
-                    sentence.cells -= new_sentence.cells
-                    sentence.count -= new_sentence.count
-                elif sentence.cells.issubset(new_sentence.cells):
-                    # TODO do we ever get here?
-                    new_sentence.cells -= sentence.cells
-                    new_sentence.count -= sentence.count
-
-        # TODO: copy the set before iterating if removing items!
+        surrounding_cells = self.surrounding_cells(cell)
+        new_sentence = Sentence(surrounding_cells, count)
+        self.knowledge.append(new_sentence)
 
         # 4) mark any additional cells as safe or as mines
         #       if it can be concluded based on the AI's knowledge base
-        #           how can we conclude this?
-        #               - if count is 0
-        #               - if count == size of set
+
+        # 4.1)
         for sentence in self.knowledge:
             if sentence.count == 0:
-                # mark all as safe
-                self.safes.union(sentence.cells)
-            if len(sentence.cells) == sentence.count:
-                # mark all as mines
-                self.mines.union(sentence.cells)
+                for cell in sentence.cells.copy():
+                    self.mark_safe(cell)
+            elif sentence.count == len(sentence.cells):
+                for cell in sentence.cells.copy():
+                    self.mark_mine(cell)
 
-        # 5) add any new sentences to the AI's knowledge base
-        #     if they can be inferred from existing knowledge
-        # go thru KB again, checking for subsets, to see if we can modify the KB
-        for sentence_A in self.knowledge:
-            for sentence_B in self.knowledge:
-                if sentence_A == sentence_B:
-                    continue
-                if sentence_A.cells.issubset(sentence_B.cells):
-                    sentence_B.cells -= sentence_A.cells
-                    sentence_B.count -= sentence_A.count
-                elif sentence_B.cells.issubset(sentence_A.cells):
-                    # TODO do we ever get here?
-                    sentence_A.cells -= sentence_B.cells
-                    sentence_A.count -= sentence_B.count
+        # 4.2)
+
+        # TODO ASSUMPTION: if count is 0, no need to add to knowledge base???
+
+        # DOES NOT WORK ========================================================
+        # if count == 0:
+        #     # all nearby cells are safe; don't add to KB
+        #     # self.safes.update(set_of_nearby_cells)
+        #     for cell in set_of_nearby_cells:
+        #         self.mark_safe(cell)
+        # else:
+        #     # update the KB based on the new sentence (check for subsets...)
+        #     new_sentence: Sentence = Sentence(set_of_nearby_cells, count)
+
+        #     for sentence in self.knowledge:
+        #         if new_sentence.cells.issubset(sentence.cells):
+        #             sentence.cells -= new_sentence.cells
+        #             sentence.count -= new_sentence.count
+        #         elif sentence.cells.issubset(new_sentence.cells):
+        #             # TODO do we ever get here?
+        #             new_sentence.cells -= sentence.cells
+        #             new_sentence.count -= sentence.count
+
+        #     if new_sentence not in self.knowledge:
+        #         self.knowledge.append(new_sentence)
+
+        # # TODO: copy the set before iterating if removing items!
+
+        # # 4) mark any additional cells as safe or as mines
+        # #       if it can be concluded based on the AI's knowledge base
+        # #           how can we conclude this?
+        # #               - if count is 0
+        # #               - if count == size of set
+        # for sentence in self.knowledge:
+        #     if (length := len(sentence.cells)) == 0:
+        #         continue
+        #     if sentence.count == 0:
+        #         # mark all as safe
+        #         self.safes.update(sentence.cells)
+        #     if len(sentence.cells) == sentence.count:
+        #         # mark all as mines
+        #         self.mines.update(sentence.cells)
+
+        # # 5) add any new sentences to the AI's knowledge base
+        # #     if they can be inferred from existing knowledge
+        # # go thru KB again, checking for subsets, to see if we can modify the KB
+        # for sentence_A in self.knowledge:
+        #     for sentence_B in self.knowledge:
+        #         if sentence_A == sentence_B:
+        #             continue
+        #         if sentence_A.cells.issubset(sentence_B.cells):
+        #             sentence_B.cells -= sentence_A.cells
+        #             sentence_B.count -= sentence_A.count
+        #         elif sentence_B.cells.issubset(sentence_A.cells):
+        #             # TODO do we ever get here?
+        #             sentence_A.cells -= sentence_B.cells
+        #             sentence_A.count -= sentence_B.count
+        # ======================================================================
+        print("DEBUG")
 
     # TODO
     def make_safe_move(self):
@@ -292,11 +320,11 @@ class MinesweeperAI:
         and self.moves_made, but should not modify any of those values.
         """
         # return a choice from known safes - moves made
-        possible_moves = list(self.safes - self.moves_made)
+        safe_moves = list(self.safes - self.moves_made)
         # return possible_moves.pop()
-        if len(possible_moves) == 0:
+        if len(safe_moves) == 0:
             return None
-        return random.choice(possible_moves)
+        return random.choice(safe_moves)
 
     # TODO
     def make_random_move(self):
@@ -307,7 +335,9 @@ class MinesweeperAI:
             2) are not known to be mines
         """
         # return a choice from all cells - moves made - known mines
-        possible_moves = list(self.all_cells - self.moves_made - self.mines)
+        possible_moves = list(
+            self.all_cells - self.moves_made - self.mines - self.safes
+        )
         if len(possible_moves) == 0:
             return None
         return random.choice(possible_moves)
