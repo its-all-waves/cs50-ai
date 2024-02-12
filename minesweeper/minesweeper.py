@@ -237,7 +237,15 @@ class MinesweeperAI:
 
         # 3) add a new sentence to the AI's knowledge base
         #     based on the value of `cell` and `count`
-        surrounding_cells = self.surrounding_cells(cell)
+
+        # weed out known mines
+        surrounding_cells = set(
+            filter(
+                lambda cell: cell not in self.mines and cell not in self.safes,
+                self.surrounding_cells(cell),
+            )
+        )
+
         new_sentence = Sentence(surrounding_cells, count)
         self.knowledge.append(new_sentence)
 
@@ -251,9 +259,11 @@ class MinesweeperAI:
             if sentence.count == 0 and len(sentence.cells) > 0:
                 for cell in sentence.cells.copy():
                     self.mark_safe(cell)
+                ...
             elif sentence.count == len(sentence.cells):
                 for cell in sentence.cells.copy():
                     self.mark_mine(cell)
+                ...
 
         self.prune_knowledge()
 
