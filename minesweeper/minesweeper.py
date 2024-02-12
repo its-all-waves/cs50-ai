@@ -1,6 +1,8 @@
 import itertools
 import random
 
+DEBUG_ALL_MINES: set
+
 
 class Minesweeper:
     """
@@ -29,6 +31,9 @@ class Minesweeper:
             if not self.board[i][j]:
                 self.mines.add((i, j))
                 self.board[i][j] = True
+
+        # DEBUG
+        print(f"~ ~ ~ ALL THE MINES: {self.mines}")
 
         # At first, player has found no mines
         self.mines_found = set()
@@ -228,7 +233,6 @@ class MinesweeperAI:
         # 1) mark the cell as a move that has been made
         # 2) mark the cell as safe
         self.moves_made.add(cell)
-        # self.safes.add(cell)
         self.mark_safe(cell)
 
         # 3) add a new sentence to the AI's knowledge base
@@ -240,74 +244,102 @@ class MinesweeperAI:
         # 4) mark any additional cells as safe or as mines
         #       if it can be concluded based on the AI's knowledge base
 
-        # 4.1)
+        self.prune_knowledge()
+
+        # 4.1) - NOTE BASE CASE ??? check for easy inferences
         for sentence in self.knowledge:
-            if sentence.count == 0:
+            if sentence.count == 0 and len(sentence.cells) > 0:
                 for cell in sentence.cells.copy():
                     self.mark_safe(cell)
             elif sentence.count == len(sentence.cells):
                 for cell in sentence.cells.copy():
                     self.mark_mine(cell)
 
-        # 4.2)
+        self.prune_knowledge()
 
-        # TODO ASSUMPTION: if count is 0, no need to add to knowledge base???
+        # TODO is this conflicting with what comes next? and does what's next cover this case already?
+        # 4.2) - look for subsets in KB
+        for sentence_A in self.knowledge:
+            for sentence_B in self.knowledge:
+                if sentence_A == sentence_B:
+                    continue
+                if len(sentence_A.cells) == 0 or len(sentence_B.cells) == 0:
+                    continue
+                if sentence_B.cells.issubset(sentence_A.cells):
+                    for cell in sentence_A.cells.copy():
+                        self.add_knowledge(cell, sentence_B.count)
+                    # sentence_A.cells -= sentence_B.cells
+                    # sentence_A.count -= sentence_B.count
+                    # if sentence.count == 0:
+                    #     for cell in sentence.cells.copy():
+                    #         self.mark_safe(cell)
+                    # elif sentence.count == len(sentence.cells):
+                    #     NOTE we never hit here
+                    #     for cell in sentence.cells.copy():
+                    #         self.mark_mine(cell)
 
-        # DOES NOT WORK ========================================================
-        # if count == 0:
-        #     # all nearby cells are safe; don't add to KB
-        #     # self.safes.update(set_of_nearby_cells)
-        #     for cell in set_of_nearby_cells:
-        #         self.mark_safe(cell)
-        # else:
-        #     # update the KB based on the new sentence (check for subsets...)
-        #     new_sentence: Sentence = Sentence(set_of_nearby_cells, count)
-
-        #     for sentence in self.knowledge:
-        #         if new_sentence.cells.issubset(sentence.cells):
-        #             sentence.cells -= new_sentence.cells
-        #             sentence.count -= new_sentence.count
-        #         elif sentence.cells.issubset(new_sentence.cells):
-        #             # TODO do we ever get here?
-        #             new_sentence.cells -= sentence.cells
-        #             new_sentence.count -= sentence.count
-
-        #     if new_sentence not in self.knowledge:
-        #         self.knowledge.append(new_sentence)
-
-        # # TODO: copy the set before iterating if removing items!
-
-        # # 4) mark any additional cells as safe or as mines
-        # #       if it can be concluded based on the AI's knowledge base
-        # #           how can we conclude this?
-        # #               - if count is 0
-        # #               - if count == size of set
+        # # 4.1) - check for easy inferences
         # for sentence in self.knowledge:
-        #     if (length := len(sentence.cells)) == 0:
-        #         continue
         #     if sentence.count == 0:
-        #         # mark all as safe
-        #         self.safes.update(sentence.cells)
-        #     if len(sentence.cells) == sentence.count:
-        #         # mark all as mines
-        #         self.mines.update(sentence.cells)
+        #         for cell in sentence.cells.copy():
+        #             self.mark_safe(cell)
+        #     elif sentence.count == len(sentence.cells):
+        #         for cell in sentence.cells.copy():
+        #             self.mark_mine(cell)
 
-        # # 5) add any new sentences to the AI's knowledge base
-        # #     if they can be inferred from existing knowledge
-        # # go thru KB again, checking for subsets, to see if we can modify the KB
-        # for sentence_A in self.knowledge:
-        #     for sentence_B in self.knowledge:
-        #         if sentence_A == sentence_B:
-        #             continue
-        #         if sentence_A.cells.issubset(sentence_B.cells):
-        #             sentence_B.cells -= sentence_A.cells
-        #             sentence_B.count -= sentence_A.count
-        #         elif sentence_B.cells.issubset(sentence_A.cells):
-        #             # TODO do we ever get here?
-        #             sentence_A.cells -= sentence_B.cells
-        #             sentence_A.count -= sentence_B.count
-        # ======================================================================
-        print("DEBUG")
+        # clean up KB
+        # self.prune_knowledge()
+
+        # print("DEBUG")
+
+        self.prune_knowledge()
+
+        # 5) add any new sentences to the AI's knowledge base
+        #     if they can be inferred from existing knowledge
+        # TODO try if len(union(A, B)) == countA == countB:  NOTE union or intersection?
+        for sentence_A in self.knowledge:
+            for sentence_B in self.knowledge:
+                if sentence_A == sentence_B:
+                    continue
+                if len(sentence_A.cells) == 0 or len(sentence_B.cells) == 0:
+                    continue
+
+                intersection = sentence_A.cells & sentence_B.cells
+                if (
+                    intersection
+                    and sentence_A.count == sentence_B.count
+                    and sentence_A.count > 0
+                ):
+                    for cell in intersection:
+                        self.add_knowledge(cell, sentence_A.count)
+
+        #         # REMOVE THIS AND TRY RECURSION INSTEAD
+        #         if (
+        #             intersection
+        #             and sentence_A.count > 0
+        #             and sentence_B.count > 0
+        #             and num_common_cells <= sentence_A.count
+        #             and num_common_cells <= sentence_B.count
+        #             # TODO PROBLEM? might this be == ???
+        #         ):
+        #             # add the intersection to known mines and remove from KB
+        #             # self.mines |= intersection
+        #             for cell in intersection:
+        #                 self.mark_mine(cell)
+        #             # # NOTE {I THINK THIS IS DONE IN .mark_mines} delete the interesection from both sets
+
+        self.prune_knowledge()
+
+        print(f": : : : mines: {self.mines or ''}")
+        # print(f": : : : : safes: {self.safes or ''}")
+        print(f": : : : : : remaining: {self.safes - self.moves_made or ''}")
+
+    def prune_knowledge(self):
+        knowledge_copy = self.knowledge.copy()
+        for sentence in self.knowledge:
+            if 0 == len(sentence.cells):
+                knowledge_copy.remove(sentence)
+        self.knowledge = knowledge_copy
 
     # TODO
     def make_safe_move(self):
