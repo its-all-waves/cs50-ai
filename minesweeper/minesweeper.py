@@ -257,40 +257,18 @@ class MinesweeperAI:
 
         self.prune_knowledge()
 
-        # TODO is this conflicting with what comes next? and does what's next cover this case already?
-        # 4.2) - look for subsets in KB
-        for sentence_A in self.knowledge:
-            for sentence_B in self.knowledge:
-                if sentence_A == sentence_B:
-                    continue
-                if len(sentence_A.cells) == 0 or len(sentence_B.cells) == 0:
-                    continue
-                if sentence_B.cells.issubset(sentence_A.cells):
-                    for cell in sentence_A.cells.copy():
-                        self.add_knowledge(cell, sentence_B.count)
-                    # sentence_A.cells -= sentence_B.cells
-                    # sentence_A.count -= sentence_B.count
-                    # if sentence.count == 0:
-                    #     for cell in sentence.cells.copy():
-                    #         self.mark_safe(cell)
-                    # elif sentence.count == len(sentence.cells):
-                    #     NOTE we never hit here
-                    #     for cell in sentence.cells.copy():
-                    #         self.mark_mine(cell)
+        # # TODO is this conflicting with what comes next? and does what's next cover this case already?
+        # # 4.2) - look for subsets in KB
+        # for sentence_A in self.knowledge:
+        #     for sentence_B in self.knowledge:
+        #         if sentence_A == sentence_B:
+        #             continue
+        #         if len(sentence_A.cells) == 0 or len(sentence_B.cells) == 0:
+        #             continue
 
-        # # 4.1) - check for easy inferences
-        # for sentence in self.knowledge:
-        #     if sentence.count == 0:
-        #         for cell in sentence.cells.copy():
-        #             self.mark_safe(cell)
-        #     elif sentence.count == len(sentence.cells):
-        #         for cell in sentence.cells.copy():
-        #             self.mark_mine(cell)
-
-        # clean up KB
-        # self.prune_knowledge()
-
-        # print("DEBUG")
+        #         if sentence_B.cells.issubset(sentence_A.cells):
+        #             for cell in sentence_A.cells.copy():
+        #                 self.add_knowledge(cell, sentence_B.count)
 
         self.prune_knowledge()
 
@@ -312,21 +290,6 @@ class MinesweeperAI:
                 ):
                     for cell in intersection:
                         self.add_knowledge(cell, sentence_A.count)
-
-        #         # REMOVE THIS AND TRY RECURSION INSTEAD
-        #         if (
-        #             intersection
-        #             and sentence_A.count > 0
-        #             and sentence_B.count > 0
-        #             and num_common_cells <= sentence_A.count
-        #             and num_common_cells <= sentence_B.count
-        #             # TODO PROBLEM? might this be == ???
-        #         ):
-        #             # add the intersection to known mines and remove from KB
-        #             # self.mines |= intersection
-        #             for cell in intersection:
-        #                 self.mark_mine(cell)
-        #             # # NOTE {I THINK THIS IS DONE IN .mark_mines} delete the interesection from both sets
 
         self.prune_knowledge()
 
