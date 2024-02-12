@@ -237,8 +237,21 @@ class MinesweeperAI:
 
         # 3) add a new sentence to the AI's knowledge base
         #     based on the value of `cell` and `count`
+        self.add_sentence_to_knowledge(cell, count)
 
-        # weed out known mines
+        # 4) mark any additional cells as safe or as mines
+        #       if it can be concluded based on the AI's knowledge base
+        self.check_knowledge_for_base_case_and_mark_cells()
+
+        # 5) add any new sentences to the AI's knowledge base
+        #     if they can be inferred from existing knowledge
+        self.check_recursive_case_and_add_knowledge()
+
+        print(f": : : : mines: {self.mines or ''}")
+        # print(f": : : : : safes: {self.safes or ''}")
+        print(f": : : : : : remaining: {self.safes - self.moves_made or ''}")
+
+    def add_sentence_to_knowledge(self, cell, count):
         surrounding_cells = set(
             filter(
                 lambda cell: cell not in self.mines and cell not in self.safes,
@@ -249,11 +262,22 @@ class MinesweeperAI:
         new_sentence = Sentence(surrounding_cells, count)
         self.knowledge.append(new_sentence)
 
-        # 4) mark any additional cells as safe or as mines
-        #       if it can be concluded based on the AI's knowledge base
+    def check_recursive_case_and_add_knowledge(self):
+        for sentence_A in self.knowledge:
+            for sentence_B in self.knowledge:
+                if sentence_A == sentence_B:
+                    continue
+                if len(sentence_A.cells) == 0 or len(sentence_B.cells) == 0:
+                    continue
 
+                intersection = sentence_A.cells & sentence_B.cells
+                count = min(sentence_A.count, sentence_B.count)
+                if intersection and count > 0:
+                    for cell in intersection:
+                        self.add_knowledge(cell, count)
         self.prune_knowledge()
 
+    def check_knowledge_for_base_case_and_mark_cells(self):
         # 4.1) - NOTE BASE CASE ??? check for easy inferences
         for sentence in self.knowledge:
             if sentence.count == 0 and len(sentence.cells) > 0:
@@ -264,48 +288,7 @@ class MinesweeperAI:
                 for cell in sentence.cells.copy():
                     self.mark_mine(cell)
                 ...
-
         self.prune_knowledge()
-
-        # # TODO is this conflicting with what comes next? and does what's next cover this case already?
-        # # 4.2) - look for subsets in KB
-        # for sentence_A in self.knowledge:
-        #     for sentence_B in self.knowledge:
-        #         if sentence_A == sentence_B:
-        #             continue
-        #         if len(sentence_A.cells) == 0 or len(sentence_B.cells) == 0:
-        #             continue
-
-        #         if sentence_B.cells.issubset(sentence_A.cells):
-        #             for cell in sentence_A.cells.copy():
-        #                 self.add_knowledge(cell, sentence_B.count)
-
-        self.prune_knowledge()
-
-        # 5) add any new sentences to the AI's knowledge base
-        #     if they can be inferred from existing knowledge
-        # TODO try if len(union(A, B)) == countA == countB:  NOTE union or intersection?
-        for sentence_A in self.knowledge:
-            for sentence_B in self.knowledge:
-                if sentence_A == sentence_B:
-                    continue
-                if len(sentence_A.cells) == 0 or len(sentence_B.cells) == 0:
-                    continue
-
-                intersection = sentence_A.cells & sentence_B.cells
-                if (
-                    intersection
-                    and sentence_A.count == sentence_B.count
-                    and sentence_A.count > 0
-                ):
-                    for cell in intersection:
-                        self.add_knowledge(cell, sentence_A.count)
-
-        self.prune_knowledge()
-
-        print(f": : : : mines: {self.mines or ''}")
-        # print(f": : : : : safes: {self.safes or ''}")
-        print(f": : : : : : remaining: {self.safes - self.moves_made or ''}")
 
     def prune_knowledge(self):
         knowledge_copy = self.knowledge.copy()
