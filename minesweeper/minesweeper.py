@@ -235,34 +235,35 @@ class MinesweeperAI:
         self.moves_made.add(cell)
         self.mark_safe(cell)
 
+        surrounding_cells = self.surrounding_cells(cell)
+
+        # 5) add any new sentences to the AI's knowledge base
+        #     if they can be inferred from existing knowledge
+        self.check_recursive_case_and_add_knowledge(surrounding_cells, count)
+
+        # print(f": : : : mines: {self.mines or ''}")
+        # print(f": : : : : safes: {self.safes or ''}")
+        # print(f": : : : : : remaining: {self.safes - self.moves_made or ''}")
+
+    def add_sentence_to_knowledge(self, cells, count):
+        surrounding_cells = set(
+            filter(
+                lambda cell: cell not in self.mines and cell not in self.safes,
+                cells,
+            )
+        )
+        new_sentence = Sentence(surrounding_cells, count)
+        self.knowledge.append(new_sentence)
+
+    def check_recursive_case_and_add_knowledge(self, cells, count):
         # 3) add a new sentence to the AI's knowledge base
         #     based on the value of `cell` and `count`
-        self.add_sentence_to_knowledge(cell, count)
+        self.add_sentence_to_knowledge(cells, count)
 
         # 4) mark any additional cells as safe or as mines
         #       if it can be concluded based on the AI's knowledge base
         self.check_knowledge_for_base_case_and_mark_cells()
 
-        # 5) add any new sentences to the AI's knowledge base
-        #     if they can be inferred from existing knowledge
-        self.check_recursive_case_and_add_knowledge()
-
-        print(f": : : : mines: {self.mines or ''}")
-        # print(f": : : : : safes: {self.safes or ''}")
-        print(f": : : : : : remaining: {self.safes - self.moves_made or ''}")
-
-    def add_sentence_to_knowledge(self, cell, count):
-        surrounding_cells = set(
-            filter(
-                lambda cell: cell not in self.mines and cell not in self.safes,
-                self.surrounding_cells(cell),
-            )
-        )
-
-        new_sentence = Sentence(surrounding_cells, count)
-        self.knowledge.append(new_sentence)
-
-    def check_recursive_case_and_add_knowledge(self):
         for sentence_A in self.knowledge:
             for sentence_B in self.knowledge:
                 if sentence_A == sentence_B:
