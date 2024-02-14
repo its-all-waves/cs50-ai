@@ -284,7 +284,7 @@ class MinesweeperAI:
                 for cell in sentence.cells.copy():
                     self.mark_safe(cell)
                 ...
-            elif sentence.count == len(sentence.cells):
+            if sentence.count > 0 and sentence.count == len(sentence.cells):
                 for cell in sentence.cells.copy():
                     self.mark_mine(cell)
                 ...
