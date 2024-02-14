@@ -264,18 +264,15 @@ class MinesweeperAI:
         #       if it can be concluded based on the AI's knowledge base
         self.check_knowledge_for_base_case_and_mark_cells()
 
-        for sentence_A in self.knowledge:
-            for sentence_B in self.knowledge:
-                if sentence_A == sentence_B:
-                    continue
-                if len(sentence_A.cells) == 0 or len(sentence_B.cells) == 0:
-                    continue
+        for sent_A, sent_B in itertools.combinations(self.knowledge, 2):
+            if len(sent_A.cells) == 0 or len(sent_B.cells) == 0:
+                continue
 
-                intersection = sentence_A.cells & sentence_B.cells
-                count = min(sentence_A.count, sentence_B.count)
-                if intersection and count > 0:
-                    for cell in intersection:
-                        self.add_knowledge(cell, count)
+            intersection = sent_A.cells & sent_B.cells
+            count = min(sent_A.count, sent_B.count)
+            if intersection and count > 0:
+                for cell in intersection:
+                    self.add_knowledge(cell, count)
         self.prune_knowledge()
 
     def check_knowledge_for_base_case_and_mark_cells(self):
