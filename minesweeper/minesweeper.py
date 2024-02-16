@@ -1,10 +1,6 @@
 import itertools
 import random
 
-# DEBUG
-CURRENT_CELL: tuple
-ALL_SURROUNDING_CELLS: set
-
 
 class Minesweeper:
     """
@@ -33,9 +29,6 @@ class Minesweeper:
             if not self.board[i][j]:
                 self.mines.add((i, j))
                 self.board[i][j] = True
-
-        # DEBUG
-        print(f"~ ~ ~ ALL THE MINES: {self.mines}")
 
         # At first, player has found no mines
         self.mines_found = set()
@@ -136,18 +129,12 @@ class Sentence:
         if cell in self.cells:
             self.cells.remove(cell)
             self.count -= 1
-        # self.cells.add(cell)
-        # self.count += 1
 
     def mark_safe(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be safe.
         """
-        if self.count > len(self.cells):
-            raise Exception("HOW DO WE GET MORE COUNT THAN CELLS?")
-        if self.count < 0:
-            raise Exception("HOW DO WE GET A COUNT LESS THAN ZERO?")
         if cell in self.cells:
             self.cells.remove(cell)
 
@@ -218,8 +205,6 @@ class MinesweeperAI:
                     # if self.board[i][j]:
                     all_surrounding_cells.add((i, j))
 
-        # DEBUG
-        ALL_SURROUNDING_CELLS = all_surrounding_cells
         return all_surrounding_cells
 
     # TODO
@@ -239,47 +224,19 @@ class MinesweeperAI:
                if they can be inferred from existing knowledge
         """
 
-        # DEBUG
-        CURRENT_CELL = cell
-        print("~ ~ ~ CELL:", cell)
-
         # 1) mark the cell as a move that has been made
         # 2) mark the cell as safe
         self.moves_made.add(cell)
         self.mark_safe(cell)
 
-        surrounding_cells = self.surrounding_cells(cell)
-        if len(surrounding_cells) == 0:
-            raise Exception("HOW IS LEN == 0 HERE?")
-
-        # 5) add any new sentences to the AI's knowledge base
-        #     if they can be inferred from existing knowledge
-        self.check_recursive_case_and_add_knowledge(
-            surrounding_cells, count, self.knowledge
-        )
-
-        # print(f": : : : mines: {self.mines or ''}")
-        # print(f": : : : : safes: {self.safes or ''}")
-        # print(f": : : : : : remaining: {self.safes - self.moves_made or ''}")
+        self.recurse(self.surrounding_cells(cell), count, self.knowledge)
 
     def add_sentence_to_knowledge(self, cells, count):
         filtered_cells = self.filtered(cells)
-        delta: int
-        # if mines were removed from cells to make filtered cells
-        if len(cells & self.mines) > 0:
-            # subtract from `count` the number of cells that were
-            # removed from `cells` to make `filtered_cells`
-            # BUGFIX keeps count from being greater than len(filtered_cells)
-            delta = len(cells & self.mines)
-            # delta = len(cells) - len(filtered_cells)
-            count -= delta
 
-        if count > len(cells):
-            print("cells:", cells, "  |  count:", count)
-            raise Exception("HOW DO WE GET MORE COUNT THAN CELLS?")
-        if count < 0:
-            print("cells:", cells, "  |  count:", count)
-            raise Exception("HOW DO WE GET A COUNT LESS THAN ZERO?")
+        # BUGFIX keeps count from being greater than len(filtered_cells)
+        # subtract from count the # of mines removed by filtering
+        count -= len(cells & self.mines)
 
         new_sentence = Sentence(filtered_cells, count)
         if new_sentence not in self.knowledge:
@@ -289,7 +246,7 @@ class MinesweeperAI:
         """Return `cells` with known safes and mines removed"""
         return cells - (self.safes | self.mines)
 
-    def check_recursive_case_and_add_knowledge(self, cells, count, knowledge):
+    def recurse(self, cells, count, knowledge):
         if len(cells) == 0:
             return
 
@@ -299,46 +256,48 @@ class MinesweeperAI:
 
         # 4) mark any additional cells as safe or as mines
         #       if it can be concluded based on the AI's knowledge base
-        # knowledge = self.try_to_eliminate_sentences(knowledge)
         self.try_to_eliminate_sentences()
 
-        # knowledge = self.prune_knowledge(knowledge)
-
-        # if len(knowledge) < 2:
-        #     return knowledge
-
+        # 5) add any new sentences to the AI's knowledge base
+        #     if they can be inferred from existing knowledge
         self.try_to_infer_new_knowledge()
 
         # return self.check_recursive_case_and_add_knowledge(cells, count, knowledge)
         # return knowledge
 
     def try_to_eliminate_sentences(self, some_left=True):
+        """
+        4) mark any additional cells as safe or as mines
+        if it can be concluded based on the AI's knowledge base
+        """
         if not some_left:
             return
 
         some_left = False
-
         for sentence in self.knowledge:
             if sentence.count == 0 and len(sentence.cells) > 0:
                 for cell in sentence.cells.copy():
                     self.mark_safe(cell)
                 return self.try_to_eliminate_sentences(some_left=True)
-                ...
             if sentence.count > 0 and sentence.count == len(sentence.cells):
                 for cell in sentence.cells.copy():
                     self.mark_mine(cell)
                     print(": : : ADDED MINE:", cell)
                 return self.try_to_eliminate_sentences(some_left=True)
-                ...
+
         self.prune_knowledge()
         self.try_to_infer_new_knowledge()
 
     def try_to_infer_new_knowledge(self):
+        """
+        5) add any new sentences to the AI's knowledge base
+        if they can be inferred from existing knowledge
+        """
         if len(self.knowledge) < 2:
             return
 
+        # check each pair of sentences in knowledge for a subset, add new knowledge
         new_knowledge = []
-
         for sent_A, sent_B in itertools.combinations(self.knowledge, 2):
             if sent_A == sent_B:
                 continue
@@ -353,20 +312,13 @@ class MinesweeperAI:
             if not cells:
                 continue
 
-            # TODO WHEN I CANCEL OUT THE SUBSET, WHERE IN CODE AM I ADDING A MINE TO KNOWN MINES?
-            if count and count < 0:
-                raise Exception("HOW DID COUNT BECOME LESS THAN ZERO?")
-            if count > len(cells):
-                raise Exception("HOW DO WE GET MORE COUNT THAN CELLS?")
-            if not cells:
-                continue
             # add new sentence to knowledge
             new_sentence = Sentence(cells, count)
             if new_sentence not in self.knowledge:
                 new_knowledge.append(new_sentence)
             ...
 
-        # exit recursion if no new knowledge discovered... but does this prevent a necessary call to the other func?
+        # exit recursion if no new knowledge discovered
         if new_knowledge == []:
             return
 
@@ -378,14 +330,14 @@ class MinesweeperAI:
         for sentence in self.knowledge:
             if 0 == len(sentence.cells):
                 knowledge_copy.remove(sentence)
+
         # remove duplicates
-        duplicates_removed = []
+        no_duplicates = []
         for sentence in knowledge_copy:
-            if sentence in duplicates_removed:
-                continue
-            if sentence not in duplicates_removed:
-                duplicates_removed.append(sentence)
-        self.knowledge = duplicates_removed
+            if sentence not in no_duplicates:
+                no_duplicates.append(sentence)
+
+        self.knowledge = no_duplicates
 
     # TODO
     def make_safe_move(self):
@@ -397,12 +349,11 @@ class MinesweeperAI:
         This function may use the knowledge in self.mines, self.safes
         and self.moves_made, but should not modify any of those values.
         """
-        # return a choice from known safes - moves made
         safe_moves = list(self.safes - self.moves_made)
-        # return possible_moves.pop()
+
         if len(safe_moves) == 0:
             return None
-        return random.choice(safe_moves)
+        return safe_moves.pop()
 
     # TODO
     def make_random_move(self):
@@ -412,10 +363,6 @@ class MinesweeperAI:
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        # return a choice from all cells - moves made - known mines
-        # possible_moves = list(
-        #     self.all_cells - self.moves_made - self.mines - self.safes
-        # )
         possible_moves = list(self.filtered(self.all_cells))
         if len(possible_moves) == 0:
             return None
