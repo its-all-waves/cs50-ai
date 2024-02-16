@@ -1,7 +1,9 @@
 import itertools
 import random
 
-DEBUG_ALL_MINES: set
+# DEBUG
+CURRENT_CELL: tuple
+ALL_SURROUNDING_CELLS: set
 
 
 class Minesweeper:
@@ -104,7 +106,8 @@ class Sentence:
         return self.cells == other.cells and self.count == other.count
 
     def __str__(self):
-        return f"{self.cells} = {self.count}"
+        return f"{self.count} {self.cells or '{}'}"
+        # return f"{self.cells} = {self.count}"
 
     # TODO
     def known_mines(self):
@@ -141,6 +144,10 @@ class Sentence:
         Updates internal knowledge representation given the fact that
         a cell is known to be safe.
         """
+        if self.count > len(self.cells):
+            raise Exception("HOW DO WE GET MORE COUNT THAN CELLS?")
+        if self.count < 0:
+            raise Exception("HOW DO WE GET A COUNT LESS THAN ZERO?")
         if cell in self.cells:
             self.cells.remove(cell)
 
@@ -192,11 +199,11 @@ class MinesweeperAI:
 
     def surrounding_cells(self, cell):
         """
-        Returns an array of nearby mines.
+        Returns an array of nearby cells.
         """
 
         # Record nearby mines
-        set_of_nearby_mines = set()
+        all_surrounding_cells = set()
 
         # Loop over all cells within one row and column
         for i in range(cell[0] - 1, cell[0] + 2):
@@ -209,9 +216,11 @@ class MinesweeperAI:
                 # Update count if cell is in bounds and is a mine
                 if 0 <= i < self.height and 0 <= j < self.width:
                     # if self.board[i][j]:
-                    set_of_nearby_mines.add((i, j))
+                    all_surrounding_cells.add((i, j))
 
-        return set_of_nearby_mines
+        # DEBUG
+        ALL_SURROUNDING_CELLS = all_surrounding_cells
+        return all_surrounding_cells
 
     # TODO
     def add_knowledge(self, cell, count):
@@ -230,70 +239,153 @@ class MinesweeperAI:
                if they can be inferred from existing knowledge
         """
 
+        # DEBUG
+        CURRENT_CELL = cell
+        print("~ ~ ~ CELL:", cell)
+
         # 1) mark the cell as a move that has been made
         # 2) mark the cell as safe
         self.moves_made.add(cell)
         self.mark_safe(cell)
 
         surrounding_cells = self.surrounding_cells(cell)
+        if len(surrounding_cells) == 0:
+            raise Exception("HOW IS LEN == 0 HERE?")
 
         # 5) add any new sentences to the AI's knowledge base
         #     if they can be inferred from existing knowledge
-        self.check_recursive_case_and_add_knowledge(surrounding_cells, count)
+        self.check_recursive_case_and_add_knowledge(
+            surrounding_cells, count, self.knowledge
+        )
 
         # print(f": : : : mines: {self.mines or ''}")
         # print(f": : : : : safes: {self.safes or ''}")
         # print(f": : : : : : remaining: {self.safes - self.moves_made or ''}")
 
     def add_sentence_to_knowledge(self, cells, count):
-        surrounding_cells = set(
-            filter(
-                lambda cell: cell not in self.mines and cell not in self.safes,
-                cells,
-            )
-        )
-        new_sentence = Sentence(surrounding_cells, count)
-        self.knowledge.append(new_sentence)
+        filtered_cells = self.filtered(cells)
+        delta: int
+        # if mines were removed from cells to make filtered cells
+        if len(cells & self.mines) > 0:
+            # subtract from `count` the number of cells that were
+            # removed from `cells` to make `filtered_cells`
+            # BUGFIX keeps count from being greater than len(filtered_cells)
+            delta = len(cells & self.mines)
+            # delta = len(cells) - len(filtered_cells)
+            count -= delta
 
-    def check_recursive_case_and_add_knowledge(self, cells, count):
+        if count > len(cells):
+            print("cells:", cells, "  |  count:", count)
+            raise Exception("HOW DO WE GET MORE COUNT THAN CELLS?")
+        if count < 0:
+            print("cells:", cells, "  |  count:", count)
+            raise Exception("HOW DO WE GET A COUNT LESS THAN ZERO?")
+
+        new_sentence = Sentence(filtered_cells, count)
+        if new_sentence not in self.knowledge:
+            self.knowledge.append(new_sentence)
+
+    def filtered(self, cells):
+        """Return `cells` with known safes and mines removed"""
+        return cells - (self.safes | self.mines)
+
+    def check_recursive_case_and_add_knowledge(self, cells, count, knowledge):
+        if len(cells) == 0:
+            return
+
         # 3) add a new sentence to the AI's knowledge base
         #     based on the value of `cell` and `count`
         self.add_sentence_to_knowledge(cells, count)
 
         # 4) mark any additional cells as safe or as mines
         #       if it can be concluded based on the AI's knowledge base
-        self.check_knowledge_for_base_case_and_mark_cells()
+        # knowledge = self.try_to_eliminate_sentences(knowledge)
+        self.try_to_eliminate_sentences()
 
-        for sent_A, sent_B in itertools.combinations(self.knowledge, 2):
-            if len(sent_A.cells) == 0 or len(sent_B.cells) == 0:
-                continue
+        # knowledge = self.prune_knowledge(knowledge)
 
-            intersection = sent_A.cells & sent_B.cells
-            count = min(sent_A.count, sent_B.count)
-            if intersection and count > 0:
-                for cell in intersection:
-                    self.add_knowledge(cell, count)
-        self.prune_knowledge()
+        # if len(knowledge) < 2:
+        #     return knowledge
 
-    def check_knowledge_for_base_case_and_mark_cells(self):
-        # 4.1) - NOTE BASE CASE ??? check for easy inferences
+        self.try_to_infer_new_knowledge()
+
+        # return self.check_recursive_case_and_add_knowledge(cells, count, knowledge)
+        # return knowledge
+
+    def try_to_eliminate_sentences(self, some_left=True):
+        if not some_left:
+            return
+
+        some_left = False
+
         for sentence in self.knowledge:
             if sentence.count == 0 and len(sentence.cells) > 0:
                 for cell in sentence.cells.copy():
                     self.mark_safe(cell)
+                return self.try_to_eliminate_sentences(some_left=True)
                 ...
             if sentence.count > 0 and sentence.count == len(sentence.cells):
                 for cell in sentence.cells.copy():
                     self.mark_mine(cell)
+                    print(": : : ADDED MINE:", cell)
+                return self.try_to_eliminate_sentences(some_left=True)
                 ...
         self.prune_knowledge()
+        self.try_to_infer_new_knowledge()
+
+    def try_to_infer_new_knowledge(self):
+        if len(self.knowledge) < 2:
+            return
+
+        new_knowledge = []
+
+        for sent_A, sent_B in itertools.combinations(self.knowledge, 2):
+            if sent_A == sent_B:
+                continue
+            cells = None
+            count = None
+            if sent_B.cells.issubset(sent_A.cells):
+                cells = self.filtered((sent_A.cells - sent_B.cells))
+                count = sent_A.count - sent_B.count
+            if sent_A.cells.issubset(sent_B.cells):
+                cells = self.filtered((sent_B.cells - sent_A.cells))
+                count = sent_B.count - sent_A.count
+            if not cells:
+                continue
+
+            # TODO WHEN I CANCEL OUT THE SUBSET, WHERE IN CODE AM I ADDING A MINE TO KNOWN MINES?
+            if count and count < 0:
+                raise Exception("HOW DID COUNT BECOME LESS THAN ZERO?")
+            if count > len(cells):
+                raise Exception("HOW DO WE GET MORE COUNT THAN CELLS?")
+            if not cells:
+                continue
+            # add new sentence to knowledge
+            new_sentence = Sentence(cells, count)
+            if new_sentence not in self.knowledge:
+                new_knowledge.append(new_sentence)
+            ...
+
+        # exit recursion if no new knowledge discovered... but does this prevent a necessary call to the other func?
+        if new_knowledge == []:
+            return
+
+        self.knowledge += new_knowledge
+        return self.try_to_eliminate_sentences()
 
     def prune_knowledge(self):
         knowledge_copy = self.knowledge.copy()
         for sentence in self.knowledge:
             if 0 == len(sentence.cells):
                 knowledge_copy.remove(sentence)
-        self.knowledge = knowledge_copy
+        # remove duplicates
+        duplicates_removed = []
+        for sentence in knowledge_copy:
+            if sentence in duplicates_removed:
+                continue
+            if sentence not in duplicates_removed:
+                duplicates_removed.append(sentence)
+        self.knowledge = duplicates_removed
 
     # TODO
     def make_safe_move(self):
@@ -321,9 +413,10 @@ class MinesweeperAI:
             2) are not known to be mines
         """
         # return a choice from all cells - moves made - known mines
-        possible_moves = list(
-            self.all_cells - self.moves_made - self.mines - self.safes
-        )
+        # possible_moves = list(
+        #     self.all_cells - self.moves_made - self.mines - self.safes
+        # )
+        possible_moves = list(self.filtered(self.all_cells))
         if len(possible_moves) == 0:
             return None
         return random.choice(possible_moves)
