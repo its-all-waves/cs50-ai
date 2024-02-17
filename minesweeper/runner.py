@@ -8,11 +8,6 @@ HEIGHT = 8
 WIDTH = 8
 MINES = 8
 
-# DEBUG
-HEIGHT = 4
-WIDTH = 4
-MINES = 4
-
 # Colors
 BLACK = (0, 0, 0)
 GRAY = (180, 180, 180)
