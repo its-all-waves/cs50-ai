@@ -80,7 +80,7 @@ def transition_model(
     for page in all_pages:
         transitions[page] += (1 - damping_factor) / num_all_pages
 
-    # assert all probabilities add to 1
+    # assert all probabilities sum to 1
     assert sum(transitions.values()) == 1
     return transitions
 
@@ -100,31 +100,27 @@ def sample_pagerank(
 
     # first sample - randomly select a page
     all_pages = list(corpus.keys())
-    first_page = random.choice(all_pages)
-    transitions = transition_model(corpus, first_page, damping_factor)
+    page = random.choice(all_pages)
+    transitions = transition_model(corpus, page, damping_factor)
 
-    # TODO do i remove the first page from the sequence i iterate over?
-    # TODO do they mean previous or current in the instruction below? ASSUME CURRENT FOR NOW -- seems like problem says this twice
-    # for each remaining sample, generate the next from the previous sample's transition model
-    appearances = [first_page]
-    for i in range(n - 1):
-        # get a random choice based on weight
+    # for each remaining sample, generate the next from the current sample's transition model
+    occurrences = [page]
+    for _ in range(n - 1):
+        # separate the page:weight pairs into corresponding lists for use in random.choices()
         pages = []
         weights = []
-        for _pg, weight in transitions.items():
-            pages.append(_pg)
+        for pg, weight in transitions.items():
+            pages.append(pg)
             weights.append(weight)
+        # randomly select a page based on weight from the transitions model;
         next_page = random.choices(pages, weights, k=1)[0]
-        # add it to the list
-        appearances.append(next_page)
+        occurrences.append(next_page)
         transitions = transition_model(corpus, next_page, damping_factor)
 
-    # return val - return a Counter() object probably ? { key: num_appearances, ...}
-    counts = Counter(appearances)
+    # assign page rank values to each page in the returned dict
+    page_ranks = {pg: count / n for pg, count in Counter(occurrences).items()}
 
-    page_ranks = {pg: count / n for pg, count in counts.items()}
-
-    # assert that the sum of values in returned dict is 1
+    # assert all probabilities sum to 1
     assert sum(page_ranks.values()) == 1
     return page_ranks
 
