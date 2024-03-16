@@ -45,7 +45,7 @@ def crawl(directory):
     return pages
 
 
-# TODO
+# TODO - DONE ?
 def transition_model(
     corpus: dict[str, set[str]], page: str, damping_factor: float
 ) -> dict[str, float]:
@@ -58,12 +58,13 @@ def transition_model(
     a link at random chosen from all pages in the corpus.
     """
 
-    # if page has no outgoing links, randomly choose from all pages with equal proba -- 100% / page count
+    # if page has no outgoing links, return the same probability for all pages
     all_pages: list[str] = corpus.keys()
     linked_pages: set[str] = corpus[page]
-    n = len(linked_pages)
-    if n == 0:
-        transitions: dict[str, float] = {pg: 1 / n for pg in all_pages}
+    num_all_pages = len(all_pages)
+    num_links_on_page = len(linked_pages)
+    if num_links_on_page == 0:
+        transitions: dict[str, float] = {pg: 1 / num_all_pages for pg in all_pages}
         assert sum(transitions.values()) == 1
         return transitions
 
@@ -72,12 +73,11 @@ def transition_model(
 
     # calculate proba of choosing each link from this page, populate transitions
     for page in linked_pages:
-        transitions[page] = damping_factor / n
+        transitions[page] = damping_factor / num_links_on_page
 
     # calculate proba of choosing any other page from corpus, *modify* transitions values
-    n = len(all_pages)
     for page in all_pages:
-        transitions[page] += (1 - damping_factor) / n
+        transitions[page] += (1 - damping_factor) / num_all_pages
 
     # assert all probabilities add to 1
     assert sum(transitions.values()) == 1
