@@ -57,12 +57,31 @@ def transition_model(
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    # all probabilities add to 1
-    # with proba damping_factor, randomly choose one of the links from page with equal proba
-    # with proba 1-damping_factor, randomly choose one of every corpus page with equal proba
-    # if page has no outgoing links, randomly choose from all pages with equal proba -- 100% / page count
 
-    raise NotImplementedError
+    # if page has no outgoing links, randomly choose from all pages with equal proba -- 100% / page count
+    all_pages: list[str] = corpus.keys()
+    linked_pages: set[str] = corpus[page]
+    n = len(linked_pages)
+    if n == 0:
+        transitions: dict[str, float] = {pg: 1 / n for pg in all_pages}
+        assert sum(transitions.values()) == 1
+        return transitions
+
+    # first, get all the pages from corpus and put them in transitions
+    transitions = {pg: 0 for pg in all_pages}
+
+    # calculate proba of choosing each link from this page, populate transitions
+    for page in linked_pages:
+        transitions[page] = damping_factor / n
+
+    # calculate proba of choosing any other page from corpus, *modify* transitions values
+    n = len(all_pages)
+    for page in all_pages:
+        transitions[page] += (1 - damping_factor) / n
+
+    # assert all probabilities add to 1
+    assert sum(transitions.values()) == 1
+    return transitions
 
 
 # TODO
