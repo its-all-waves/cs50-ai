@@ -1,21 +1,4 @@
-from pagerank import transition_model, DAMPING, SAMPLES
-
-# TEST DATA
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-CORPUS = {
-    "1.html": {"2.html", "3.html"},
-    "2.html": {"3.html"},
-    "3.html": {"2.html"},
-}
-
-TRANSITION_MODEL = {
-    "1.html": 0.05,
-    "2.html": 0.475,
-    "3.html": 0.475,
-}
-
-PAGE = "1.html"
+from pagerank import transition_model, sample_pagerank, DAMPING, SAMPLES
 
 # TESTS
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -35,8 +18,26 @@ def test_transition_model_2(corpus, page, damping_factor):
     print(f"	✅ PASS: transition_model() returns equal proba when page has no links")
 
 
+def test_sample_pagerank(corpus, damping_factor, n):
+    #
+    result = sample_pagerank(corpus, damping_factor, n)
+    print(f"	✅ PASS: transition_model() returns equal proba when page has no links")
+    ...
+
+
 # RUN TESTS
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+CORPUS = {
+    "1.html": {"2.html", "3.html"},
+    "2.html": {"3.html"},
+    "3.html": {"2.html"},
+}
+TRANSITION_MODEL = {
+    "1.html": 0.05,
+    "2.html": 0.475,
+    "3.html": 0.475,
+}
+PAGE = "1.html"
 test_transition_model_1(CORPUS, PAGE, DAMPING)
 
 
@@ -47,3 +48,6 @@ CORPUS_2 = {
 }
 PAGE_2 = "1.html"
 test_transition_model_2(CORPUS_2, PAGE_2, DAMPING)
+
+
+test_sample_pagerank(CORPUS, DAMPING, SAMPLES)

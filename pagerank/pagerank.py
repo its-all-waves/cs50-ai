@@ -2,6 +2,7 @@ import os
 import random
 import re
 import sys
+from collections import Counter
 
 DAMPING = 0.85
 SAMPLES = 10000
@@ -96,10 +97,36 @@ def sample_pagerank(
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
+
     # first sample - randomly select a page
+    all_pages = list(corpus.keys())
+    first_page = random.choice(all_pages)
+    transitions = transition_model(corpus, first_page, damping_factor)
+
+    # TODO do i remove the first page from the sequence i iterate over?
+    # TODO do they mean previous or current in the instruction below? ASSUME CURRENT FOR NOW -- seems like problem says this twice
     # for each remaining sample, generate the next from the previous sample's transition model
+    appearances = [first_page]
+    for i in range(n - 1):
+        # get a random choice based on weight
+        pages = []
+        weights = []
+        for _pg, weight in transitions.items():
+            pages.append(_pg)
+            weights.append(weight)
+        next_page = random.choices(pages, weights, k=1)[0]
+        # add it to the list
+        appearances.append(next_page)
+        transitions = transition_model(corpus, next_page, damping_factor)
+
+    # return val - return a Counter() object probably ? { key: num_appearances, ...}
+    counts = Counter(appearances)
+
+    page_ranks = {pg: count / n for pg, count in counts.items()}
+
     # assert that the sum of values in returned dict is 1
-    raise NotImplementedError
+    assert sum(page_ranks.values()) == 1
+    return page_ranks
 
 
 # TODO
