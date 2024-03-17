@@ -6,6 +6,7 @@ from collections import Counter
 
 DAMPING = 0.85
 SAMPLES = 10000
+CONVERGENCE_MARGIN = 0.001
 
 
 def main():
@@ -122,26 +123,40 @@ def sample_pagerank(
 
 
 # TODO
-def pr(
+def rank(
+    page,
     page_ranks: dict[str, float],
     corpus,
-    page,
     damping_factor,
 ):
+    """
+    Returns the iterative Page Rank of `page` given an existing
+    dict of page ranks, corpus, the page for which we want the
+    page rank, and the damping factor.
+    ```
+              1 - d            PR(i)
+    PR(p)  =  ⎯⎯⎯  +  d ∑  ⎯⎯⎯⎯⎯⎯
+                N         i  NumLinks(i)
+
+            ⬆ term_a        ⬆ term_b
+    ```
+    `PR(p)` = page rank of given page, `d` = damping factor,
+    `N` = total page count, `i` = a page that links to page `p`,
+    `PR(i)` = the page rank of a page `i`, `NumLinks(i)` = the
+    link count on page `i`
+    """
 
     term_a = (1 - damping_factor) / len(corpus)
 
-    # links_on_page: set[str] = corpus[page]
     pages_with_links_to_page = set(pg for pg in corpus.keys() if page in corpus[pg])
     term_b = 0
-    # for page in links_on_page:
     for pg in pages_with_links_to_page:
-        page_rank = page_ranks[pg]
-        num_links_on_page = len(corpus[pg])
-        term_b += page_rank / num_links_on_page
+        pg_rank = page_ranks[pg]
+        pg_link_count = len(corpus[pg])
+        term_b += pg_rank / pg_link_count
     term_b *= damping_factor
 
-    return term_a + term_b
+    return (page_rank := term_a + term_b)
 
 
 # TODO
@@ -156,29 +171,36 @@ def iterate_pagerank(
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    # first, assign each page a rank of 1 / page count
-    page_ranks: dict[str, float] = {pg: 1 / len(corpus) for pg in corpus.keys()}
 
-    # repeatedly calculate new rank vals based on all current rank vals (using PageRank formula in "Background" section of problem.)
-    i = 0
+    # first, assign each page a rank of 1 / page count
+    page_count = len(corpus)
+    page_ranks: dict[str, float] = {pg: 1 / page_count for pg in corpus.keys()}
+
+    # repeatedly calculate new rank vals based on all current rank vals
+    index = 0
+    increment = lambda i: i + 1 if i < page_count - 1 else 0  # cycle the index
+    ranks_converged = [False] * page_count
     while True:
-        page, rank = list(page_ranks.items())[i]
-        i = i + 1 if i < len(corpus) - 1 else 0
+        # TODO How the F do I skip iterations over ranks that already converged?
+
+        page, old_rank = list(page_ranks.items())[index]
+        index = increment(index)
 
         # TODO a page with no links - interpret as having 1 link for every page (incl self)
         if len(corpus[page]) == 0:
             ...
 
-        old_rank = rank
-        new_rank = pr(page_ranks, corpus, page, damping_factor)
+        new_rank = rank(page, page_ranks, corpus, damping_factor)
         page_ranks[page] = new_rank
 
-        # repeat process until no PR value changes by more than 0.001 from current to new
-        if 0 < abs(new_rank - old_rank) <= 0.001:
-            # assert round(sum(page_ranks.values()), 1) == 1
-            return page_ranks
+        if abs(new_rank - old_rank) > CONVERGENCE_MARGIN:
+            continue
 
-    # assert that the sum of values in returned dict is 1
+        # this page rank has fully converged
+        ranks_converged[index] = True
+        if all(ranks_converged):
+            assert round(sum(page_ranks.values()), 1)
+            return page_ranks
 
 
 if __name__ == "__main__":

@@ -32,7 +32,7 @@ def test_sample_pagerank(corpus, damping_factor, n):
 
 def test_iterate_pagerank(corpus, damping_factor):
     result = iterate_pagerank(corpus, damping_factor)
-    print(f"	✅ PASS: transition_model() returns equal proba when page has no links")
+    print(f"	✅ PASS: iterate_pagerank() RUNS WITHOUT ERRORS")
     raise NotImplementedError
 
 
