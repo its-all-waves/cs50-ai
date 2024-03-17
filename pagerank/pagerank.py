@@ -177,12 +177,12 @@ def iterate_pagerank(
     page_ranks: dict[str, float] = {pg: 1 / page_count for pg in corpus.keys()}
 
     # repeatedly calculate new rank vals based on all current rank vals
-    index = 0
-    # increment = lambda i: i + 1 if i < page_count - 1 else 0  # cycle the index
-    increment = lambda: index + 1 if index < page_count - 1 else 0  # cycle the index
+    index = -1
     ranks_converged = [False] * page_count
     while True:
         # TODO How the F do I skip iterations over ranks that already converged?
+
+        index = index + 1 if index < page_count - 1 else 0  # cycle the index
 
         page, old_rank = list(page_ranks.items())[index]
 
@@ -194,7 +194,6 @@ def iterate_pagerank(
         page_ranks[page] = new_rank
 
         if abs(new_rank - old_rank) > CONVERGENCE_MARGIN:
-            index = increment()
             continue
 
         # this page rank has fully converged
@@ -202,8 +201,6 @@ def iterate_pagerank(
         if all(ranks_converged):
             assert round(sum(page_ranks.values()), 1)
             return page_ranks
-
-        index = increment()
 
 
 if __name__ == "__main__":
