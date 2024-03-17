@@ -106,16 +106,12 @@ def sample_pagerank(
     # for each remaining sample, generate the next from the current sample's transition model
     occurrences = [page]
     for _ in range(n - 1):
-        # separate the page:weight pairs into corresponding lists for use in random.choices()
-        pages = []
-        weights = []
-        for pg, weight in transitions.items():
-            pages.append(pg)
-            weights.append(weight)
-        # randomly select a page based on weight from the transitions model;
-        next_page = random.choices(pages, weights, k=1)[0]
-        occurrences.append(next_page)
-        transitions = transition_model(corpus, next_page, damping_factor)
+        # separate the page:weight pairs into corresponding lists;
+        # randomly select a page based on weight from the transitions model
+        pages, weights = zip(*transitions.items())
+        page = random.choices(pages, weights, k=1)[0]
+        occurrences.append(page)
+        transitions = transition_model(corpus, page, damping_factor)
 
     # assign page rank values to each page in the returned dict
     page_ranks = {pg: count / n for pg, count in Counter(occurrences).items()}
