@@ -67,7 +67,7 @@ def transition_model(
     num_links_on_page = len(linked_pages)
     if num_links_on_page == 0:
         transitions: dict[str, float] = {pg: 1 / num_all_pages for pg in all_pages}
-        assert sum(transitions.values()) == 1
+        assert sum(transitions.values()) == 1, "Probabilities don't sum to 1!"
         return transitions
 
     # first, get all the pages from corpus and put them in transitions
@@ -81,8 +81,7 @@ def transition_model(
     for page in all_pages:
         transitions[page] += (1 - damping_factor) / num_all_pages
 
-    # assert all probabilities sum to 1
-    assert sum(transitions.values()) == 1
+    assert sum(transitions.values()) == 1, "Probabilities don't sum to 1!"
     return transitions
 
 
@@ -106,9 +105,10 @@ def sample_pagerank(
     # for each remaining sample, generate the next from the current sample's transition model
     occurrences = {pg: 0 for pg in corpus.keys()}
     for _ in range(n - 1):
-        # split page:weight pairs into corresponding lists;
-        # randomly select a page based on weight from the transitions model
+        # split page:weight pairs into corresponding lists
         pages, weights = zip(*transitions.items())
+
+        # select a page based on weight from the transitions model & keep track
         page = random.choices(pages, weights, k=1)[0]
         transitions = transition_model(corpus, page, damping_factor)
         occurrences[page] += 1
@@ -116,8 +116,7 @@ def sample_pagerank(
     # assign page rank values to each page in the returned dict
     page_ranks = {pg: count / n for pg, count in occurrences.items()}
 
-    # assert all probabilities sum to 1
-    assert round(sum(page_ranks.values()), 2) == 1
+    assert round(sum(page_ranks.values()), 2) == 1, "Probabilities don't sum to 1!"
     return page_ranks
 
 
@@ -206,7 +205,7 @@ def iterate_pagerank(
         # this page rank has fully converged -- have all ranks converged?
         ranks_converged[index] = True
         if all(ranks_converged):
-            assert round(sum(page_ranks.values()), 1)
+            assert round(sum(page_ranks.values()), 1), "Probabilities don't sum to 1!"
             return page_ranks
 
 
