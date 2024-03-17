@@ -98,7 +98,6 @@ def sample_pagerank(
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-
     # first sample - randomly select a page
     all_pages = list(corpus.keys())
     page = random.choice(all_pages)
@@ -150,17 +149,20 @@ def rank(
 
     term_b = 0
 
+    # update the summation of term b for any pages with no links
     pages_with_no_links = set(pg for pg in corpus.keys() if len(corpus[pg]) == 0)
     for pg in pages_with_no_links:
         pg_rank = page_ranks[pg]
         term_b += pg_rank / page_count
 
+    # update the summation of term b for all pages that link to the given page
     pages_with_links_to_page = set(pg for pg in corpus.keys() if page in corpus[pg])
     for pg in pages_with_links_to_page:
         pg_rank = page_ranks[pg]
         pg_link_count = len(corpus[pg])
         term_b += pg_rank / pg_link_count
 
+    # multiply the summation by the damping factor
     term_b *= damping_factor
 
     return (page_rank := term_a + term_b)
@@ -178,28 +180,30 @@ def iterate_pagerank(
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-
     # initialize each page to a rank of 1 / page count
     page_count = len(corpus)
     page_ranks: dict[str, float] = {pg: 1 / page_count for pg in corpus.keys()}
+
+    # TODO skip iterations where ranks already converged
+    # had mucho trouble with this
 
     # calculate new rank values until precision converges
     index = -1
     ranks_converged: list[bool] = [False] * page_count
     while True:
-        # TODO How the F do I skip iterations over ranks that already converged?
+        # cycle thru all pages indefinitely
+        index = (index + 1) if index < page_count - 1 else (0)
 
-        index = (index + 1) if index < page_count - 1 else (0)  # cycle the index
-
+        # update page's rank
         page, old_rank = list(page_ranks.items())[index]
-
         new_rank = rank(page, page_ranks, corpus, damping_factor)
         page_ranks[page] = new_rank
 
+        # move to next iteration if this rank hasn't converged
         if abs(new_rank - old_rank) > CONVERGENCE_MARGIN:
             continue
 
-        # this page rank has fully converged
+        # this page rank has fully converged -- have all ranks converged?
         ranks_converged[index] = True
         if all(ranks_converged):
             assert round(sum(page_ranks.values()), 1)
