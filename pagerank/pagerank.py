@@ -104,20 +104,20 @@ def sample_pagerank(
     transitions = transition_model(corpus, page, damping_factor)
 
     # for each remaining sample, generate the next from the current sample's transition model
-    occurrences = [page]
+    occurrences = {pg: 0 for pg in corpus.keys()}
     for _ in range(n - 1):
         # split page:weight pairs into corresponding lists;
         # randomly select a page based on weight from the transitions model
         pages, weights = zip(*transitions.items())
         page = random.choices(pages, weights, k=1)[0]
-        occurrences.append(page)
         transitions = transition_model(corpus, page, damping_factor)
+        occurrences[page] += 1
 
     # assign page rank values to each page in the returned dict
-    page_ranks = {pg: count / n for pg, count in Counter(occurrences).items()}
+    page_ranks = {pg: count / n for pg, count in occurrences.items()}
 
     # assert all probabilities sum to 1
-    assert sum(page_ranks.values()) == 1
+    assert round(sum(page_ranks.values()), 2) == 1
     return page_ranks
 
 

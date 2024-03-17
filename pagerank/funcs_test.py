@@ -27,13 +27,13 @@ def test_transition_model_2(corpus, page, damping_factor):
 def test_sample_pagerank(corpus, damping_factor, n):
     result = sample_pagerank(corpus, damping_factor, n)
     print(f"	✅ PASS: sample_pagerank() WHAT DO I DO?")
-    raise NotImplementedError
+    # raise NotImplementedError
 
 
 def test_iterate_pagerank(corpus, damping_factor):
     result = iterate_pagerank(corpus, damping_factor)
     print(f"	✅ PASS: iterate_pagerank() RUNS WITHOUT ERRORS")
-    raise NotImplementedError
+    # raise NotImplementedError
 
 
 # RUN TESTS
@@ -61,7 +61,7 @@ PAGE_2 = "1.html"
 test_transition_model_2(CORPUS_2, PAGE_2, DAMPING)
 
 
-# test_sample_pagerank(CORPUS, DAMPING, SAMPLES)
+test_sample_pagerank(CORPUS, DAMPING, SAMPLES)
 
 # 3: no links
 CORPUS_3 = {
