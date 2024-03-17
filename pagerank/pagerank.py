@@ -145,15 +145,22 @@ def rank(
     `PR(i)` = the page rank of a page `i`, `NumLinks(i)` = the
     link count on page `i`
     """
+    page_count = len(corpus)
+    term_a = (1 - damping_factor) / page_count
 
-    term_a = (1 - damping_factor) / len(corpus)
+    term_b = 0
+
+    pages_with_no_links = set(pg for pg in corpus.keys() if len(corpus[pg]) == 0)
+    for pg in pages_with_no_links:
+        pg_rank = page_ranks[pg]
+        term_b += pg_rank / page_count
 
     pages_with_links_to_page = set(pg for pg in corpus.keys() if page in corpus[pg])
-    term_b = 0
     for pg in pages_with_links_to_page:
         pg_rank = page_ranks[pg]
         pg_link_count = len(corpus[pg])
         term_b += pg_rank / pg_link_count
+
     term_b *= damping_factor
 
     return (page_rank := term_a + term_b)
@@ -178,17 +185,13 @@ def iterate_pagerank(
 
     # repeatedly calculate new rank vals based on all current rank vals
     index = -1
-    ranks_converged = [False] * page_count
+    ranks_converged: list[bool] = [False] * page_count
     while True:
         # TODO How the F do I skip iterations over ranks that already converged?
 
-        index = index + 1 if index < page_count - 1 else 0  # cycle the index
+        index = (index + 1) if index < page_count - 1 else (0)  # cycle the index
 
         page, old_rank = list(page_ranks.items())[index]
-
-        # TODO a page with no links - interpret as having 1 link for every page (incl self)
-        if len(corpus[page]) == 0:
-            ...
 
         new_rank = rank(page, page_ranks, corpus, damping_factor)
         page_ranks[page] = new_rank

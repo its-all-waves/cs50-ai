@@ -63,4 +63,19 @@ test_transition_model_2(CORPUS_2, PAGE_2, DAMPING)
 
 # test_sample_pagerank(CORPUS, DAMPING, SAMPLES)
 
-test_iterate_pagerank(CORPUS, DAMPING)
+# 3: no links
+CORPUS_3 = {
+    "1": {"2"},
+    "2": {"1", "3"},
+    "3": {"2", "4", "5"},
+    "4": {"1", "2"},
+    "5": set(),
+}
+RANKS_3 = {
+    "1": 0.24178,
+    "2": 0.35320,
+    "3": 0.19773,
+    "4": 0.10364,
+    "5": 0.10364,
+}
+test_iterate_pagerank(CORPUS_3, DAMPING)
