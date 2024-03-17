@@ -185,7 +185,6 @@ def iterate_pagerank(
         # TODO How the F do I skip iterations over ranks that already converged?
 
         page, old_rank = list(page_ranks.items())[index]
-        index = increment()
 
         # TODO a page with no links - interpret as having 1 link for every page (incl self)
         if len(corpus[page]) == 0:
@@ -195,6 +194,7 @@ def iterate_pagerank(
         page_ranks[page] = new_rank
 
         if abs(new_rank - old_rank) > CONVERGENCE_MARGIN:
+            index = increment()
             continue
 
         # this page rank has fully converged
@@ -202,6 +202,8 @@ def iterate_pagerank(
         if all(ranks_converged):
             assert round(sum(page_ranks.values()), 1)
             return page_ranks
+
+        index = increment()
 
 
 if __name__ == "__main__":
