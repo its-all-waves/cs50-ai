@@ -1,4 +1,10 @@
-from pagerank import transition_model, sample_pagerank, DAMPING, SAMPLES
+from pagerank import (
+    transition_model,
+    sample_pagerank,
+    iterate_pagerank,
+    DAMPING,
+    SAMPLES,
+)
 
 # TESTS
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -19,10 +25,15 @@ def test_transition_model_2(corpus, page, damping_factor):
 
 
 def test_sample_pagerank(corpus, damping_factor, n):
-    #
     result = sample_pagerank(corpus, damping_factor, n)
+    print(f"	✅ PASS: sample_pagerank() WHAT DO I DO?")
+    raise NotImplementedError
+
+
+def test_iterate_pagerank(corpus, damping_factor):
+    result = iterate_pagerank(corpus, damping_factor)
     print(f"	✅ PASS: transition_model() returns equal proba when page has no links")
-    ...
+    raise NotImplementedError
 
 
 # RUN TESTS
@@ -50,4 +61,6 @@ PAGE_2 = "1.html"
 test_transition_model_2(CORPUS_2, PAGE_2, DAMPING)
 
 
-test_sample_pagerank(CORPUS, DAMPING, SAMPLES)
+# test_sample_pagerank(CORPUS, DAMPING, SAMPLES)
+
+test_iterate_pagerank(CORPUS, DAMPING)

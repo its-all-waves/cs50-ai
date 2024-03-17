@@ -46,7 +46,7 @@ def crawl(directory):
     return pages
 
 
-# TODO - DONE ?
+# TODO DONE
 def transition_model(
     corpus: dict[str, set[str]], page: str, damping_factor: float
 ) -> dict[str, float]:
@@ -85,7 +85,7 @@ def transition_model(
     return transitions
 
 
-# TODO
+# TODO DONE
 def sample_pagerank(
     corpus: dict[str, set[str]], damping_factor: float, n: int
 ) -> dict[str, float]:
@@ -106,7 +106,7 @@ def sample_pagerank(
     # for each remaining sample, generate the next from the current sample's transition model
     occurrences = [page]
     for _ in range(n - 1):
-        # separate the page:weight pairs into corresponding lists;
+        # split page:weight pairs into corresponding lists;
         # randomly select a page based on weight from the transitions model
         pages, weights = zip(*transitions.items())
         page = random.choices(pages, weights, k=1)[0]
@@ -122,6 +122,29 @@ def sample_pagerank(
 
 
 # TODO
+def pr(
+    page_ranks: dict[str, float],
+    corpus,
+    page,
+    damping_factor,
+):
+
+    term_a = (1 - damping_factor) / len(corpus)
+
+    # links_on_page: set[str] = corpus[page]
+    pages_with_links_to_page = set(pg for pg in corpus.keys() if page in corpus[pg])
+    term_b = 0
+    # for page in links_on_page:
+    for pg in pages_with_links_to_page:
+        page_rank = page_ranks[pg]
+        num_links_on_page = len(corpus[pg])
+        term_b += page_rank / num_links_on_page
+    term_b *= damping_factor
+
+    return term_a + term_b
+
+
+# TODO
 def iterate_pagerank(
     corpus: dict[str, set[str]], damping_factor: float
 ) -> dict[str, float]:
@@ -134,11 +157,28 @@ def iterate_pagerank(
     PageRank values should sum to 1.
     """
     # first, assign each page a rank of 1 / page count
+    page_ranks: dict[str, float] = {pg: 1 / len(corpus) for pg in corpus.keys()}
+
     # repeatedly calculate new rank vals based on all current rank vals (using PageRank formula in "Background" section of problem.)
-    # a page with no links - interpret as having 1 link for every page (incl self)
-    # repeat process until no PR value changes by more than 0.001 from current to new
+    i = 0
+    while True:
+        page, rank = list(page_ranks.items())[i]
+        i = i + 1 if i < len(corpus) - 1 else 0
+
+        # TODO a page with no links - interpret as having 1 link for every page (incl self)
+        if len(corpus[page]) == 0:
+            ...
+
+        old_rank = rank
+        new_rank = pr(page_ranks, corpus, page, damping_factor)
+        page_ranks[page] = new_rank
+
+        # repeat process until no PR value changes by more than 0.001 from current to new
+        if 0 < abs(new_rank - old_rank) <= 0.001:
+            # assert round(sum(page_ranks.values()), 1) == 1
+            return page_ranks
+
     # assert that the sum of values in returned dict is 1
-    raise NotImplementedError
 
 
 if __name__ == "__main__":
