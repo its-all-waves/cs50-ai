@@ -178,13 +178,14 @@ def iterate_pagerank(
 
     # repeatedly calculate new rank vals based on all current rank vals
     index = 0
-    increment = lambda i: i + 1 if i < page_count - 1 else 0  # cycle the index
+    # increment = lambda i: i + 1 if i < page_count - 1 else 0  # cycle the index
+    increment = lambda: index + 1 if index < page_count - 1 else 0  # cycle the index
     ranks_converged = [False] * page_count
     while True:
         # TODO How the F do I skip iterations over ranks that already converged?
 
         page, old_rank = list(page_ranks.items())[index]
-        index = increment(index)
+        index = increment()
 
         # TODO a page with no links - interpret as having 1 link for every page (incl self)
         if len(corpus[page]) == 0:
