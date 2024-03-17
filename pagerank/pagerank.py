@@ -102,7 +102,7 @@ def sample_pagerank(
     page = random.choice(all_pages)
     transitions = transition_model(corpus, page, damping_factor)
 
-    # for each remaining sample, generate the next from the current sample's transition model
+    # for remaining samples, generate next from current's transition model
     occurrences = {pg: 0 for pg in corpus.keys()}
     for _ in range(n - 1):
         # split page:weight pairs into corresponding lists
@@ -120,7 +120,7 @@ def sample_pagerank(
     return page_ranks
 
 
-# TODO
+# TODO DONE
 def rank(
     page,
     page_ranks: dict[str, float],
@@ -167,7 +167,7 @@ def rank(
     return (page_rank := term_a + term_b)
 
 
-# TODO
+# TODO DONE
 def iterate_pagerank(
     corpus: dict[str, set[str]], damping_factor: float
 ) -> dict[str, float]:
@@ -183,8 +183,8 @@ def iterate_pagerank(
     page_count = len(corpus)
     page_ranks: dict[str, float] = {pg: 1 / page_count for pg in corpus.keys()}
 
-    # TODO skip iterations where ranks already converged
-    # had mucho trouble with this
+    # TODO skip iters where ranks already converged... had mucho trouble with this
+    # Is there a reason why I *cannot* do this?
 
     # calculate new rank values until precision converges
     index = -1
@@ -202,7 +202,7 @@ def iterate_pagerank(
         if abs(new_rank - old_rank) > CONVERGENCE_MARGIN:
             continue
 
-        # this page rank has fully converged -- have all ranks converged?
+        # this page rank has fully converged and return if all ranks converged
         ranks_converged[index] = True
         if all(ranks_converged):
             assert round(sum(page_ranks.values()), 1), "Probabilities don't sum to 1!"
