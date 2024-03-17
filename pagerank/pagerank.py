@@ -179,11 +179,11 @@ def iterate_pagerank(
     PageRank values should sum to 1.
     """
 
-    # first, assign each page a rank of 1 / page count
+    # initialize each page to a rank of 1 / page count
     page_count = len(corpus)
     page_ranks: dict[str, float] = {pg: 1 / page_count for pg in corpus.keys()}
 
-    # repeatedly calculate new rank vals based on all current rank vals
+    # calculate new rank values until precision converges
     index = -1
     ranks_converged: list[bool] = [False] * page_count
     while True:
